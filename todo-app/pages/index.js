@@ -1,65 +1,62 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import React, { useState } from 'react';
+import Head from 'next/head';
+import TodoList from '../components/ToDoList';
+import AddTodo from '../components/AddTodo';
+import styles from '../styles/Home.module.css';
 
-export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+const Home = ({ todos }) => {
+	const [newTodos, setNewTodos] = useState(
+		todos.tasks.length > 0 ? todos.tasks : []
+	);
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+	const handleDelete = async (task) => {
+		console.log('i am task', task);
+		const res = await fetch(`http://localhost:3000/api/todos/${task._id}`, {
+			method: 'DELETE',
+			headers: {
+				'content-type': 'application/json',
+			},
+		});
+		const deleteTask = await res.json();
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+		const todoList = newTodos.filter(
+			(todo) => todo._id !== deleteTask.deletedTask._id
+		);
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+		setNewTodos(todoList);
+	};
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+	const updateTodos = (task) => {
+		setNewTodos([...newTodos, task[0]]);
+		console.log(newTodos);
+	};
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+	return (
+		<div className={styles.container}>
+			<Head>
+				<title>To Do App</title>
+			</Head>
 
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+			<main className={styles.main}>
+				<h1 className={styles.title}>Your To DO List</h1>
+				<AddTodo updateTodos={updateTodos} />
+				<div className={styles.grid}>
+					<TodoList handleDelete={handleDelete} todos={newTodos} />
+				</div>
+			</main>
+		</div>
+	);
+};
 
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
-}
+export const getStaticProps = async () => {
+	const res = await fetch(`http://localhost:3000/api/todos`);
+	const todos = await res.json();
+
+	return {
+		props: {
+			todos,
+		},
+	};
+};
+
+export default Home;
